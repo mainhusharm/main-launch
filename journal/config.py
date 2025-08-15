@@ -16,3 +16,10 @@ class ProductionConfig(Config):
     """Production configuration."""
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'postgresql://user:password@host/db')
     DEBUG = False
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')
+    
+    # Add these for better production handling
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+    }

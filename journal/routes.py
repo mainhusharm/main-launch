@@ -10,9 +10,11 @@ trades_bp = Blueprint('trades', __name__)
 risk_plan_bp = Blueprint('risk_plan', __name__)
 plan_generation_bp = Blueprint('plan_generation', __name__)
 
-@trades_bp.route('/trades', methods=['POST'])
-@jwt_required()
+@trades_bp.route('/trades', methods=['POST', 'OPTIONS'])
+@jwt_required(optional=True)
 def add_trade():
+    if request.method == 'OPTIONS':
+        return '', 200
     data = request.get_json()
     user_id = get_jwt_identity()
 
@@ -320,8 +322,10 @@ def generate_comprehensive_risk_plan_with_prop_firm_rules(data):
     
     return comprehensive_plan
 
-@risk_plan_bp.route('/risk-plan', methods=['POST'])
+@risk_plan_bp.route('/risk-plan', methods=['POST', 'OPTIONS'])
 def create_or_update_risk_plan():
+    if request.method == 'OPTIONS':
+        return '', 200
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No data provided'}), 400
