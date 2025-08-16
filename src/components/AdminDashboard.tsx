@@ -29,17 +29,11 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isForexBotRunning, setIsForexBotRunning] = useState(false);
+  const [isCryptoBotRunning, setIsCryptoBotRunning] = useState(false);
   // Check admin authentication
   useEffect(() => {
     const adminMpinAuth = localStorage.getItem('admin_mpin_authenticated');
     const adminMpinTimestamp = localStorage.getItem('admin_mpin_timestamp');
-    const isAdminMpinValid = adminMpinAuth && adminMpinTimestamp && 
-      (Date.now() - parseInt(adminMpinTimestamp)) < 24 * 60 * 60 * 1000; // 24 hours
-    
-    if (!isAdminMpinValid) {
-      navigate('/admin');
-    }
-  }, [navigate]);
     const isAdminMpinValid = adminMpinAuth && adminMpinTimestamp && 
       (Date.now() - parseInt(adminMpinTimestamp)) < 24 * 60 * 60 * 1000; // 24 hours
     
@@ -151,28 +145,16 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="flex items-center space-x-2 bg-gray-800/50 border border-gray-700 hover:bg-gray-700/70 text-white px-4 py-2 rounded-lg transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,255,255,0.5)]"
-              >
-                <Settings className="w-4 h-4" />
-                <span>Settings</span>
+              <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full hover:bg-gray-800 transition-colors">
+                <Settings />
               </button>
-              <button
-                onClick={() => {
-                  localStorage.removeItem('admin_mpin_authenticated');
-                  localStorage.removeItem('admin_mpin_timestamp');
-                  onLogout();
-                }}
-                className="flex items-center space-x-2 bg-gray-800/50 border border-gray-700 hover:bg-gray-700/70 text-white px-4 py-2 rounded-lg transition-all duration-300 hover:shadow-[0_0_15px_rgba(255,0,0,0.5)]"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
+              <button onClick={handleLogout} className="p-2 rounded-full hover:bg-gray-800 transition-colors">
+                <LogOut />
               </button>
             </div>
           </header>
-                onClick={handleLogout}
-          {isSettingsOpen && <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />}
+          
+          <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
           <div className="p-6">
             <div className="flex space-x-2 mb-6 border-b border-gray-800">
