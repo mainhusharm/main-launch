@@ -992,6 +992,7 @@ const DashboardConcept2 = ({ onLogout }: { onLogout: () => void }) => {
           onAccept={handleConsentAccept}
           onDecline={handleConsentDecline}
         />
+      <SupportChatButton />
     </>
   );
 };

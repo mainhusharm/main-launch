@@ -178,32 +178,7 @@ const CustomerServiceDashboard: React.FC = () => {
 
       // Simulate customer response
       setTimeout(() => {
-        const responses = [
-          'Thank you for your help!',
-          'I understand, what should I do next?',
-          'That makes sense, thanks for explaining.',
-          'Is there anything else I need to know?',
-          'Perfect, that solves my issue!'
-        ];
-
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        const customerMessage: Message = {
-          type: 'customer',
-          text: randomResponse,
-          time: 'Just now'
-        };
-
-        setMessages(prev => ({
-          ...prev,
-          [currentChat]: [...(prev[currentChat] || []), customerMessage]
-        }));
-
-        // Update chat preview
-        setChats(prev => prev.map(chat => 
-          chat.id === currentChat 
-            ? { ...chat, message: randomResponse, time: 'Just now' }
-            : chat
-        ));
+        // Don't simulate customer response anymore - real responses come from user dashboard
       }, 2000);
     }
   };
