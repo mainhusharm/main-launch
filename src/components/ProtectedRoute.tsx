@@ -9,6 +9,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { admin } = useAdmin();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isCustomerServiceRoute = location.pathname.startsWith('/customer-service');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -46,20 +47,36 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
       }
     };
 
-    if (!isAdminRoute) {
+    if (!isAdminRoute && !isCustomerServiceRoute) {
       fetchUser();
     } else {
       setIsLoading(false);
     }
-  }, [isAdminRoute, setUser]);
+  }, [isAdminRoute, isCustomerServiceRoute, setUser]);
 
   if (isLoading) {
     return <div>Loading...</div>; // Or a spinner component
   }
 
   if (isAdminRoute) {
-    if (!admin || !admin.isAuthenticated) {
+    // Check M-PIN authentication for admin
+    const adminMpinAuth = localStorage.getItem('admin_mpin_authenticated');
+    const adminMpinTimestamp = localStorage.getItem('admin_mpin_timestamp');
+    const isAdminMpinValid = adminMpinAuth && adminMpinTimestamp && 
+      (Date.now() - parseInt(adminMpinTimestamp)) < 24 * 60 * 60 * 1000; // 24 hours
+    
+    if (!isAdminMpinValid) {
       return <Navigate to="/admin" state={{ from: location }} replace />;
+    }
+  } else if (isCustomerServiceRoute) {
+    // Check M-PIN authentication for customer service
+    const customerServiceMpinAuth = localStorage.getItem('customer_service_mpin_authenticated');
+    const customerServiceMpinTimestamp = localStorage.getItem('customer_service_mpin_timestamp');
+    const isCustomerServiceMpinValid = customerServiceMpinAuth && customerServiceMpinTimestamp && 
+      (Date.now() - parseInt(customerServiceMpinTimestamp)) < 24 * 60 * 60 * 1000; // 24 hours
+    
+    if (!isCustomerServiceMpinValid) {
+      return <Navigate to="/customer-service" state={{ from: location }} replace />;
     }
   } else {
     if (!user || !user.isAuthenticated) {

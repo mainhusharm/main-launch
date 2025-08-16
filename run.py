@@ -24,7 +24,7 @@ def build_frontend():
         print("Frontend built successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error building frontend: {e}")
-        sys.exit(1)
+        print("Continuing without frontend build...")
 
 def setup_database():
     """Ensure the database is clean and created."""
@@ -39,7 +39,7 @@ def setup_database():
         print("Database created successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error creating database: {e}")
-        sys.exit(1)
+        print("Continuing without database setup...")
 
 def kill_process_on_port(port):
     try:

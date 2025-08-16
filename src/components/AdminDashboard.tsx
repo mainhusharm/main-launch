@@ -28,6 +28,25 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isForexBotRunning, setIsForexBotRunning] = useState(false);
   const [isCryptoBotRunning, setIsCryptoBotRunning] = useState(false);
+  const navigate = useNavigate();
+
+  // Check M-PIN authentication on component mount
+  useEffect(() => {
+    const adminMpinAuth = localStorage.getItem('admin_mpin_authenticated');
+    const adminMpinTimestamp = localStorage.getItem('admin_mpin_timestamp');
+    const isAdminMpinValid = adminMpinAuth && adminMpinTimestamp && 
+      (Date.now() - parseInt(adminMpinTimestamp)) < 24 * 60 * 60 * 1000; // 24 hours
+    
+    if (!isAdminMpinValid) {
+      navigate('/admin');
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('admin_mpin_authenticated');
+    localStorage.removeItem('admin_mpin_timestamp');
+    onLogout();
+  };
   
   const [signal, setSignal] = useState({
     currencyPair: 'EURUSD',
@@ -134,7 +153,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
               </button>
             </div>
           </header>
-
+                onClick={handleLogout}
           <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
           <div className="p-6">

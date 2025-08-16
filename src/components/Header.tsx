@@ -77,6 +77,26 @@ const Header = () => {
             >
               Pricing
             </Link>
+            <Link 
+              to="/admin" 
+              className={`font-medium transition-colors ${
+                isActive('/admin') 
+                  ? 'text-red-400' 
+                  : 'text-gray-300 hover:text-red-400'
+              }`}
+            >
+              Admin
+            </Link>
+            <Link 
+              to="/customer-service" 
+              className={`font-medium transition-colors ${
+                isActive('/customer-service') 
+                  ? 'text-indigo-400' 
+                  : 'text-gray-300 hover:text-indigo-400'
+              }`}
+            >
+              Support
+            </Link>
           </nav>
 
           {/* Desktop CTA */}
@@ -162,6 +182,28 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 FAQ
+              </Link>
+              <Link 
+                to="/admin" 
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  isActive('/admin') 
+                    ? 'text-red-400 bg-red-600/20' 
+                    : 'text-gray-300 hover:text-red-400 hover:bg-gray-800'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Admin
+              </Link>
+              <Link 
+                to="/customer-service" 
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  isActive('/customer-service') 
+                    ? 'text-indigo-400 bg-indigo-600/20' 
+                    : 'text-gray-300 hover:text-indigo-400 hover:bg-gray-800'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Support
               </Link>
               <div className="pt-4 border-t border-gray-700">
                 <Link

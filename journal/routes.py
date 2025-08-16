@@ -14,8 +14,16 @@ plan_generation_bp = Blueprint('plan_generation', __name__)
 @jwt_required(optional=True)
 def add_trade():
     if request.method == 'OPTIONS':
-        return '', 200
+        response = jsonify()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "*")
+        response.headers.add('Access-Control-Allow-Methods', "*")
+        return response, 200
+        
     data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No JSON data provided'}), 422
+        
     user_id = get_jwt_identity()
 
     if not data or not all(k in data for k in ['pair', 'type', 'entry', 'stopLoss', 'takeProfit']):
@@ -39,8 +47,12 @@ def add_trade():
         user_id=user.id
     )
     
-    db.session.add(new_trade)
-    db.session.commit()
+    try:
+        db.session.add(new_trade)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Database error occurred'}), 500
     
     return jsonify({'message': 'Trade added successfully', 'trade_id': new_trade.id}), 201
 
@@ -325,7 +337,12 @@ def generate_comprehensive_risk_plan_with_prop_firm_rules(data):
 @risk_plan_bp.route('/risk-plan', methods=['POST', 'OPTIONS'])
 def create_or_update_risk_plan():
     if request.method == 'OPTIONS':
-        return '', 200
+        response = jsonify()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "*")
+        response.headers.add('Access-Control-Allow-Methods', "*")
+        return response, 200
+        
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No data provided'}), 400

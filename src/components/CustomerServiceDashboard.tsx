@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   MessageSquare, 
   Users, 
@@ -24,7 +25,8 @@ import {
   Tag,
   Archive,
   RefreshCw,
-  LifeBuoy
+  LifeBuoy,
+  LogOut
 } from 'lucide-react';
 
 interface Customer {
@@ -51,6 +53,7 @@ interface Stats {
 }
 
 const CustomerServiceDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [currentChat, setCurrentChat] = useState<number | null>(null);
   const [chats, setChats] = useState<Customer[]>([]);
   const [messages, setMessages] = useState<{ [key: number]: Message[] }>({});
@@ -63,6 +66,24 @@ const CustomerServiceDashboard: React.FC = () => {
     customerSatisfaction: '4.8/5',
     resolvedToday: 28
   });
+
+  // Check M-PIN authentication on component mount
+  useEffect(() => {
+    const customerServiceMpinAuth = localStorage.getItem('customer_service_mpin_authenticated');
+    const customerServiceMpinTimestamp = localStorage.getItem('customer_service_mpin_timestamp');
+    const isCustomerServiceMpinValid = customerServiceMpinAuth && customerServiceMpinTimestamp && 
+      (Date.now() - parseInt(customerServiceMpinTimestamp)) < 24 * 60 * 60 * 1000; // 24 hours
+    
+    if (!isCustomerServiceMpinValid) {
+      navigate('/customer-service');
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('customer_service_mpin_authenticated');
+    localStorage.removeItem('customer_service_mpin_timestamp');
+    navigate('/customer-service');
+  };
 
   // Initialize sample data
   useEffect(() => {
@@ -312,6 +333,13 @@ const CustomerServiceDashboard: React.FC = () => {
                 <div className="font-semibold text-sm">John Doe</div>
                 <div className="text-xs text-gray-500">Support Agent</div>
               </div>
+              <button
+                onClick={handleLogout}
+                className="ml-2 text-gray-500 hover:text-gray-700 p-1 rounded"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>

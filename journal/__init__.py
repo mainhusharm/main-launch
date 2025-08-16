@@ -41,6 +41,33 @@ def create_app(config_object='journal.config.DevelopmentConfig'):
             "allowed_methods": error.description if hasattr(error, 'description') else []
         }), 405
 
+    # Add 404 handler
+    @app.errorhandler(404)
+    def not_found(error):
+        # Check if it's an API request
+        if request.path.startswith('/api/'):
+            return jsonify({
+                "error": "Not found",
+                "message": f"The endpoint {request.path} was not found"
+            }), 404
+        # For non-API requests, serve the frontend
+        return send_from_directory(app.static_folder, 'index.html')
+
+    # Add 422 handler
+    @app.errorhandler(422)
+    def unprocessable_entity(error):
+        return jsonify({
+            "error": "Unprocessable entity",
+            "message": "The request was well-formed but was unable to be followed due to semantic errors"
+        }), 422
+
+    # Add 500 handler
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        return jsonify({
+            "error": "Internal server error",
+            "message": "An unexpected error occurred on the server"
+        }), 500
     # Register blueprints
     app.register_blueprint(trades_bp, url_prefix='/api')
     app.register_blueprint(risk_plan_bp, url_prefix='/api')
@@ -67,13 +94,6 @@ def create_app(config_object='journal.config.DevelopmentConfig'):
 
     # Database tables are created via create_db.py
 
-    @app.errorhandler(Exception)
-    def handle_exception(e):
-        """Return JSON instead of HTML for any other server error."""
-        import traceback
-        traceback.print_exc()
-        response = { "msg": "An unexpected error occurred. Please try again." }
-        return jsonify(response), 500
 
     return app
 
