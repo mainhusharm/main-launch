@@ -40,6 +40,7 @@ const AdminDashboard = ({ onLogout }: { onLogout: () => void }) => {
     if (!isAdminMpinValid) {
       navigate('/admin');
     }
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_mpin_authenticated');
