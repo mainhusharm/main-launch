@@ -581,50 +581,53 @@ def generate_plan():
 
 @trades_bp.route('/accounts', methods=['GET'])
 def get_accounts():
-    try:
-        return jsonify([]), 200
-    except Exception as e:
-        return jsonify({'error': 'Failed to fetch accounts'}), 500
+    return jsonify([]), 200
 
 @risk_plan_bp.route('/trading-plan', methods=['GET'])
 @jwt_required()
 def get_trading_plan():
-    user_id = get_jwt_identity()
-    risk_plan = RiskPlan.query.filter_by(user_id=user_id).first()
-
-    if not risk_plan:
-        return jsonify({'error': 'Trading plan not found'}), 404
-
     try:
-        crypto_assets = json.loads(risk_plan.crypto_assets) if risk_plan.crypto_assets else []
-        forex_assets = json.loads(risk_plan.forex_assets) if risk_plan.forex_assets else []
-    except (json.JSONDecodeError, TypeError):
-        crypto_assets = []
-        forex_assets = []
+        user_id = get_jwt_identity()
+        if not user_id:
+            return jsonify({'error': 'User not authenticated'}), 401
+            
+        risk_plan = RiskPlan.query.filter_by(user_id=user_id).first()
 
-    trading_plan_data = {
-        'userProfile': {
-            'initialBalance': risk_plan.initial_balance,
-            'accountEquity': risk_plan.account_equity,
-            'tradesPerDay': risk_plan.trades_per_day,
-            'tradingSession': risk_plan.trading_session,
-            'cryptoAssets': crypto_assets,
-            'forexAssets': forex_assets,
-            'hasAccount': risk_plan.has_account,
-            'experience': risk_plan.experience,
-        },
-        'riskParameters': {
-            'maxDailyRisk': risk_plan.max_daily_risk,
-            'maxDailyRiskPct': risk_plan.max_daily_risk_pct,
-            'baseTradeRisk': risk_plan.base_trade_risk,
-            'baseTradeRiskPct': risk_plan.base_trade_risk_pct,
-            'minRiskReward': risk_plan.min_risk_reward,
-        },
-        'trades': risk_plan.trades,
-        'propFirmCompliance': risk_plan.prop_firm_compliance,
-    }
+        if not risk_plan:
+            return jsonify({'error': 'Trading plan not found'}), 404
 
-    return jsonify({'tradingPlan': trading_plan_data})
+        try:
+            crypto_assets = json.loads(risk_plan.crypto_assets) if risk_plan.crypto_assets else []
+            forex_assets = json.loads(risk_plan.forex_assets) if risk_plan.forex_assets else []
+        except (json.JSONDecodeError, TypeError):
+            crypto_assets = []
+            forex_assets = []
+
+        trading_plan_data = {
+            'userProfile': {
+                'initialBalance': risk_plan.initial_balance,
+                'accountEquity': risk_plan.account_equity,
+                'tradesPerDay': risk_plan.trades_per_day,
+                'tradingSession': risk_plan.trading_session,
+                'cryptoAssets': crypto_assets,
+                'forexAssets': forex_assets,
+                'hasAccount': risk_plan.has_account,
+                'experience': risk_plan.experience,
+            },
+            'riskParameters': {
+                'maxDailyRisk': risk_plan.max_daily_risk,
+                'maxDailyRiskPct': risk_plan.max_daily_risk_pct,
+                'baseTradeRisk': risk_plan.base_trade_risk,
+                'baseTradeRiskPct': risk_plan.base_trade_risk_pct,
+                'minRiskReward': risk_plan.min_risk_reward,
+            },
+            'trades': risk_plan.trades,
+            'propFirmCompliance': risk_plan.prop_firm_compliance,
+        }
+
+        return jsonify({'tradingPlan': trading_plan_data})
+    except Exception as e:
+        return jsonify({'error': 'Failed to fetch trading plan'}), 500
 
 @risk_plan_bp.route('/dashboard-data/<user_email>', methods=['GET'])
 def get_dashboard_data(user_email):
