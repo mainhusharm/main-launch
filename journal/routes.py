@@ -581,7 +581,10 @@ def generate_plan():
 
 @trades_bp.route('/accounts', methods=['GET'])
 def get_accounts():
-    return jsonify([]), 200
+    try:
+        return jsonify([]), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to fetch accounts'}), 500
 
 @risk_plan_bp.route('/trading-plan', methods=['GET'])
 @jwt_required()
