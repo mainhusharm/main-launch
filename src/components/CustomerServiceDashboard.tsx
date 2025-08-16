@@ -66,6 +66,29 @@ const CustomerServiceDashboard: React.FC = () => {
     customerSatisfaction: '4.8/5',
     resolvedToday: 28
   });
+  const [settings, setSettings] = useState({
+    autoAssign: true,
+    enableChatbot: true,
+    showTyping: true,
+    responseTimeTarget: 5,
+    emailNotifications: true,
+    desktopNotifications: true,
+    soundAlerts: true,
+    agentStatus: 'online',
+    maxConcurrentChats: 5,
+    workingHoursStart: '09:00',
+    workingHoursEnd: '17:00',
+    botResponseDelay: 3,
+    handoffKeywords: ['human', 'agent', 'speak to someone', 'escalate', 'manager'],
+    autoHandoffAfterFailed: 3,
+    quickResponses: [
+      { title: 'Greeting', message: 'Hello! Welcome to our support. How can I assist you today?' },
+      { title: 'Help Request', message: 'I\'m here to help! Could you please provide more details about your issue?' },
+      { title: 'Issue Resolved', message: 'Great! I\'m glad we could resolve your issue. Is there anything else you need help with?' },
+      { title: 'Escalation', message: 'I\'ll escalate this to our senior team for immediate attention. They\'ll be with you shortly.' }
+    ]
+  });
+  const [settingsSaved, setSettingsSaved] = useState(false);
 
   // Check M-PIN authentication on component mount
   useEffect(() => {
@@ -77,12 +100,62 @@ const CustomerServiceDashboard: React.FC = () => {
     if (!isCustomerServiceMpinValid) {
       navigate('/customer-service');
     }
+    
+    // Load settings from localStorage
+    const savedSettings = localStorage.getItem('customer_service_settings');
+    if (savedSettings) {
+      setSettings(JSON.parse(savedSettings));
+    }
   }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('customer_service_mpin_authenticated');
     localStorage.removeItem('customer_service_mpin_timestamp');
     navigate('/customer-service');
+  };
+
+  const updateSetting = (key: string, value: any) => {
+    setSettings(prev => {
+      const newSettings = { ...prev, [key]: value };
+      localStorage.setItem('customer_service_settings', JSON.stringify(newSettings));
+      return newSettings;
+    });
+  };
+
+  const updateQuickResponse = (index: number, field: 'title' | 'message', value: string) => {
+    setSettings(prev => {
+      const newResponses = [...prev.quickResponses];
+      newResponses[index] = { ...newResponses[index], [field]: value };
+      const newSettings = { ...prev, quickResponses: newResponses };
+      localStorage.setItem('customer_service_settings', JSON.stringify(newSettings));
+      return newSettings;
+    });
+  };
+
+  const addQuickResponse = () => {
+    setSettings(prev => {
+      const newSettings = {
+        ...prev,
+        quickResponses: [...prev.quickResponses, { title: '', message: '' }]
+      };
+      localStorage.setItem('customer_service_settings', JSON.stringify(newSettings));
+      return newSettings;
+    });
+  };
+
+  const removeQuickResponse = (index: number) => {
+    setSettings(prev => {
+      const newResponses = prev.quickResponses.filter((_, i) => i !== index);
+      const newSettings = { ...prev, quickResponses: newResponses };
+      localStorage.setItem('customer_service_settings', JSON.stringify(newSettings));
+      return newSettings;
+    });
+  };
+
+  const saveSettings = () => {
+    localStorage.setItem('customer_service_settings', JSON.stringify(settings));
+    setSettingsSaved(true);
+    setTimeout(() => setSettingsSaved(false), 3000);
   };
 
   // Initialize sample data
@@ -184,15 +257,18 @@ const CustomerServiceDashboard: React.FC = () => {
   };
 
   const sendTemplate = (type: string) => {
-    const templates = {
+    const template = settings.quickResponses.find(t => t.title.toLowerCase().includes(type.toLowerCase()));
+    const fallbackTemplates = {
       greeting: 'Hello! Welcome to our support. How can I assist you today?',
       help: 'I\'m here to help! Could you please provide more details about your issue?',
       resolved: 'Great! I\'m glad we could resolve your issue. Is there anything else you need help with?',
       escalate: 'I\'ll escalate this to our senior team for immediate attention. They\'ll be with you shortly.'
     };
 
-    if (currentChat && templates[type as keyof typeof templates]) {
-      setMessageInput(templates[type as keyof typeof templates]);
+    const messageText = template?.message || fallbackTemplates[type as keyof typeof fallbackTemplates];
+    
+    if (currentChat && messageText) {
+      setMessageInput(messageText);
     }
   };
 
@@ -495,18 +571,13 @@ const CustomerServiceDashboard: React.FC = () => {
                   <div className="mb-6">
                     <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h4>
                     <div className="space-y-2">
-                      {[
-                        { label: 'Send Greeting', action: () => sendTemplate('greeting') },
-                        { label: 'How can I help?', action: () => sendTemplate('help') },
-                        { label: 'Mark as Resolved', action: () => sendTemplate('resolved') },
-                        { label: 'Escalate to Manager', action: () => sendTemplate('escalate') }
-                      ].map(item => (
+                      {settings.quickResponses.slice(0, 4).map((template, index) => (
                         <button
-                          key={item.label}
-                          onClick={item.action}
+                          key={index}
+                          onClick={() => sendTemplate(template.title)}
                           className="w-full p-2 text-left bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 text-sm"
                         >
-                          {item.label}
+                          {template.title || `Template ${index + 1}`}
                         </button>
                       ))}
                     </div>
@@ -519,10 +590,313 @@ const CustomerServiceDashboard: React.FC = () => {
                       <div>• Contacted support 2 days ago</div>
                       <div>• Account upgraded last month</div>
                     </div>
+            <div className="space-y-6">
+              {/* General Settings */}
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h3 className="text-xl font-semibold text-gray-800 mb-6">General Settings</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Auto-assign new chats</label>
+                      <p className="text-xs text-gray-500">Automatically assign incoming chats to available agents</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.autoAssign}
+                        onChange={(e) => updateSetting('autoAssign', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Enable chatbot responses</label>
+                      <p className="text-xs text-gray-500">Allow AI bot to respond before agent handoff</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.enableChatbot}
+                        onChange={(e) => updateSetting('enableChatbot', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Show typing indicators</label>
+                      <p className="text-xs text-gray-500">Display when agents are typing</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.showTyping}
+                        onChange={(e) => updateSetting('showTyping', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Response time target: {settings.responseTimeTarget} minutes
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="30"
+                      value={settings.responseTimeTarget}
+                      onChange={(e) => updateSetting('responseTimeTarget', parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>1 min</span>
+                      <span>15 min</span>
+                      <span>30 min</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </>
+
+              {/* Notification Settings */}
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h3 className="text-xl font-semibold text-gray-800 mb-6">Notification Settings</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Email notifications</label>
+                      <p className="text-xs text-gray-500">Receive email alerts for new chats and escalations</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.emailNotifications}
+                        onChange={(e) => updateSetting('emailNotifications', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Desktop notifications</label>
+                      <p className="text-xs text-gray-500">Show browser notifications for urgent messages</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.desktopNotifications}
+                        onChange={(e) => updateSetting('desktopNotifications', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Sound alerts</label>
+                      <p className="text-xs text-gray-500">Play sound when new messages arrive</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.soundAlerts}
+                        onChange={(e) => updateSetting('soundAlerts', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Agent Settings */}
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h3 className="text-xl font-semibold text-gray-800 mb-6">Agent Settings</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Agent Status</label>
+                    <select
+                      value={settings.agentStatus}
+                      onChange={(e) => updateSetting('agentStatus', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="online">🟢 Online</option>
+                      <option value="away">🟡 Away</option>
+                      <option value="busy">🔴 Busy</option>
+                      <option value="offline">⚫ Offline</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Maximum concurrent chats: {settings.maxConcurrentChats}
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="20"
+                      value={settings.maxConcurrentChats}
+                      onChange={(e) => updateSetting('maxConcurrentChats', parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>1</span>
+                      <span>10</span>
+                      <span>20</span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Working hours start</label>
+                      <input
+                        type="time"
+                        value={settings.workingHoursStart}
+                        onChange={(e) => updateSetting('workingHoursStart', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Working hours end</label>
+                      <input
+                        type="time"
+                        value={settings.workingHoursEnd}
+                        onChange={(e) => updateSetting('workingHoursEnd', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chatbot Configuration */}
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h3 className="text-xl font-semibold text-gray-800 mb-6">Chatbot Configuration</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bot response delay: {settings.botResponseDelay} seconds
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={settings.botResponseDelay}
+                      onChange={(e) => updateSetting('botResponseDelay', parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>1s</span>
+                      <span>5s</span>
+                      <span>10s</span>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Handoff trigger keywords</label>
+                    <input
+                      type="text"
+                      value={settings.handoffKeywords.join(', ')}
+                      onChange={(e) => updateSetting('handoffKeywords', e.target.value.split(', ').filter(k => k.trim()))}
+                      placeholder="human, agent, speak to someone, escalate"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Comma-separated keywords that trigger agent handoff</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Auto-handoff after failed responses: {settings.autoHandoffAfterFailed}
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={settings.autoHandoffAfterFailed}
+                      onChange={(e) => updateSetting('autoHandoffAfterFailed', parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>1</span>
+                      <span>5</span>
+                      <span>10</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Response Templates */}
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h3 className="text-xl font-semibold text-gray-800 mb-6">Quick Response Templates</h3>
+                <div className="space-y-4">
+                  {settings.quickResponses.map((template, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <input
+                          type="text"
+                          value={template.title}
+                          onChange={(e) => updateQuickResponse(index, 'title', e.target.value)}
+                          placeholder="Template title"
+                          className="font-medium text-gray-800 bg-transparent border-none focus:outline-none"
+                        />
+                        <button
+                          onClick={() => removeQuickResponse(index)}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <textarea
+                        value={template.message}
+                        onChange={(e) => updateQuickResponse(index, 'message', e.target.value)}
+                        placeholder="Template message"
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                      />
+                    </div>
+                  ))}
+                  <button
+                    onClick={addQuickResponse}
+                    className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-indigo-500 hover:text-indigo-500 transition-colors"
+                  >
+                    + Add Template
+                  </button>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-lg font-medium text-gray-800">Save Settings</h4>
+                    <p className="text-sm text-gray-500">Changes are saved automatically</p>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    {settingsSaved && (
+                      <span className="text-green-600 text-sm flex items-center">
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Saved
+                      </span>
+                    )}
+                    <button
+                      onClick={saveSettings}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Save All Settings
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

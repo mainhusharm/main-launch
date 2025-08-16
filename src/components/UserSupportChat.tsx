@@ -42,8 +42,11 @@ const UserSupportChat: React.FC<UserSupportChatProps> = ({ isOpen, onClose }) =>
   const getBotResponse = (userMessage: string): string => {
     const message = userMessage.toLowerCase();
     
-    // Check for handoff keywords
-    const handoffKeywords = ['human', 'agent', 'speak to someone', 'escalate', 'manager', 'representative'];
+    // Get handoff keywords from customer service settings
+    const savedSettings = localStorage.getItem('customer_service_settings');
+    const csSettings = savedSettings ? JSON.parse(savedSettings) : null;
+    const handoffKeywords = csSettings?.handoffKeywords || ['human', 'agent', 'speak to someone', 'escalate', 'manager', 'representative'];
+    
     if (handoffKeywords.some(keyword => message.includes(keyword))) {
       setIsAgentConnected(true);
       return "I'm connecting you with a human agent now. Please wait a moment...";
@@ -191,7 +194,7 @@ const UserSupportChat: React.FC<UserSupportChatProps> = ({ isOpen, onClose }) =>
       }
     };
 
-    const interval = setInterval(handleAgentResponse, 2000);
+    const interval = setInterval(handleAgentResponse, 3000);
     return () => clearInterval(interval);
   }, [chatId, messages]);
 
